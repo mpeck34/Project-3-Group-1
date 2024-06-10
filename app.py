@@ -2,6 +2,7 @@ from flask import Flask, jsonify
 import sqlite3
 import csv
 import zipfile
+import os
 
 app = Flask(__name__)
 
@@ -23,7 +24,7 @@ def import_csv_to_sqlite(csv_file, db_file):
                         Bike_number INTEGER,
                         Bike_model VARCHAR(255),
                         Total_duration VARCHAR(255),
-                        Total_duration_(ms) INTEGER,
+                        Total_duration_ms INTEGER
                     )''')
 
     # Read data from CSV and insert into the table
@@ -51,11 +52,15 @@ def extract_csv_from_zip_and_import(zip_file_path, csv_file_name_inside_zip, db_
                     temp_file.write(csv_file.read())
             # Import data from the extracted CSV into SQLite
             import_csv_to_sqlite(temp_csv_file_path, db_file)
+
+            # Delete the temporary CSV file after successful import
+            os.remove(temp_csv_file_path)
+
         else:
             print(f"CSV file '{csv_file_name_inside_zip}' not found in the ZIP archive.")
 
 # Import CSV from ZIP into SQLite
-zip_file_path = '../static/data/LondonBikeJourneyAug2023.csv.zip'
+zip_file_path = './static/data/LondonBikeJourneyAug2023.csv.zip'
 csv_file_name_inside_zip = 'LondonBikeJourneyAug2023.csv'
 db_file = 'LondonBikeJourneyAug2023.db'
 extract_csv_from_zip_and_import(zip_file_path, csv_file_name_inside_zip, db_file)
