@@ -1,6 +1,6 @@
 //// Taken from the class exercise
 
-let newYorkCoords = [40.73, -74.0059];
+let londonCoords = [51.5072, -0.1276];
 let mapZoomLevel = 12;
 
 // Create the createMap function.
@@ -23,7 +23,7 @@ function createMap(bikeStations) {
 
   // Create the map object with options.
   let myMap = L.map("map-id", {
-    center: newYorkCoords,
+    center: londonCoords,
     zoom: mapZoomLevel,
     layers: [streetmap, bikeStations]
   });
@@ -33,6 +33,7 @@ function createMap(bikeStations) {
     collapsed: false
   }).addTo(myMap);
 }
+
 
 // Create the createMarkers function.
 function createMarkers(response) {
@@ -62,5 +63,5 @@ function createMarkers(response) {
   createMap(bikeStationsLayer);
 }
 
-// Perform an API call to the Citi Bike API to get the station information. Call createMarkers when it completes.
-d3.json("https://gbfs.citibikenyc.com/gbfs/en/station_information.json").then(createMarkers);
+// Perform an API call to the locally hosted Flask API to get the station information. Call createMarkers when it completes.
+d3.json("http://localhost:5000/api/london_station_information").then(createMarkers);
