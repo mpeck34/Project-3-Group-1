@@ -12,10 +12,18 @@ def import_csv_to_sqlite(csv_file, db_file):
     cursor = conn.cursor()
 
     # Create table if it doesn't exist
-    cursor.execute('''CREATE TABLE IF NOT EXISTS my_table (
-                        column1 TEXT,
-                        column2 INTEGER,
-                        column3 REAL
+    cursor.execute('''CREATE TABLE IF NOT EXISTS bike_share_table (
+                        Number INTEGER,
+                        Start_date DATE,
+                        Start_station_number INTEGER,
+                        Start_station VARCHAR(255),
+                        End_date DATE,
+                        End_station_number INTEGER,
+                        End_station VARCHAR(255),
+                        Bike_number INTEGER,
+                        Bike_model VARCHAR(255),
+                        Total_duration VARCHAR(255),
+                        Total_duration_(ms) INTEGER,
                     )''')
 
     # Read data from CSV and insert into the table
@@ -23,7 +31,7 @@ def import_csv_to_sqlite(csv_file, db_file):
         csv_reader = csv.reader(file)
         next(csv_reader)  # Skip header row if exists
         for row in csv_reader:
-            cursor.execute("INSERT INTO my_table VALUES (?, ?, ?)", row)
+            cursor.execute("INSERT INTO bike_share_table VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
 
     # Commit changes and close connection
     conn.commit()
@@ -60,7 +68,7 @@ def get_data():
     cursor = conn.cursor()
 
     # Retrieve data from the table
-    cursor.execute("SELECT * FROM my_table")
+    cursor.execute("SELECT * FROM bike_share_table")
     rows = cursor.fetchall()
 
     # Convert data to JSON format
