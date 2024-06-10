@@ -1,11 +1,10 @@
 from flask import Flask, jsonify
 import sqlite3
 import csv
+import zipfile
 
 app = Flask(__name__)
 
-
-# Import CSV into SQLite
 # Function to import data from CSV into SQLite database
 def import_csv_to_sqlite(csv_file, db_file):
     # Connect to SQLite database
@@ -30,16 +29,34 @@ def import_csv_to_sqlite(csv_file, db_file):
     conn.commit()
     conn.close()
 
-# Import data from CSV into SQLite database
-import_csv_to_sqlite('data.csv', 'example.db')
+# Function to extract CSV from ZIP and import into SQLite
+def extract_csv_from_zip_and_import(zip_file_path, csv_file_name_inside_zip, db_file):
+    # Open the ZIP file for reading
+    with zipfile.ZipFile(zip_file_path, 'r') as zip_file:
+        # Check if the CSV file exists in the ZIP archive
+        if csv_file_name_inside_zip in zip_file.namelist():
+            # Extract the CSV file from the ZIP archive to a temporary location
+            with zip_file.open(csv_file_name_inside_zip, 'r') as csv_file:
+                # Save the CSV file to a temporary location
+                temp_csv_file_path = 'temp.csv'
+                with open(temp_csv_file_path, 'wb') as temp_file:
+                    temp_file.write(csv_file.read())
+            # Import data from the extracted CSV into SQLite
+            import_csv_to_sqlite(temp_csv_file_path, db_file)
+        else:
+            print(f"CSV file '{csv_file_name_inside_zip}' not found in the ZIP archive.")
 
+# Import CSV from ZIP into SQLite
+zip_file_path = '../static/data/LondonBikeJourneyAug2023.csv.zip'
+csv_file_name_inside_zip = 'LondonBikeJourneyAug2023.csv'
+db_file = 'LondonBikeJourneyAug2023.db'
+extract_csv_from_zip_and_import(zip_file_path, csv_file_name_inside_zip, db_file)
 
-# Create Flask server and JSONify
 # Define a route to serve JSON data
 @app.route('/api/data')
 def get_data():
     # Connect to SQLite database
-    conn = sqlite3.connect('example.db')
+    conn = sqlite3.connect(db_file)
     cursor = conn.cursor()
 
     # Retrieve data from the table
