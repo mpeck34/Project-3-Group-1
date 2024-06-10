@@ -50,14 +50,19 @@ def extract_csv_from_zip_and_import(zip_file_path, csv_file_name_inside_zip, db_
                 temp_csv_file_path = 'temp.csv'
                 with open(temp_csv_file_path, 'wb') as temp_file:
                     temp_file.write(csv_file.read())
+
             # Import data from the extracted CSV into SQLite
             import_csv_to_sqlite(temp_csv_file_path, db_file)
 
-            # Delete the temporary CSV file after successful import
-            os.remove(temp_csv_file_path)
-
         else:
             print(f"CSV file '{csv_file_name_inside_zip}' not found in the ZIP archive.")
+
+    # Delete the temporary CSV file after successful import
+    if os.path.exists('temp.csv'):
+        os.remove('temp.csv')
+        print(f"Temporary file deleted: {'temp.csv'}")
+    else:
+        print(f"Temporary file not found for deletion: {'temp.csv'}")
 
 # Import CSV from ZIP into SQLite
 zip_file_path = './static/data/LondonBikeJourneyAug2023.csv.zip'
@@ -84,6 +89,7 @@ def get_data():
 
     # Return JSON response
     return jsonify(data)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
