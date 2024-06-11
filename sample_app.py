@@ -56,13 +56,35 @@ def extract_csv_from_zip_and_import(zip_file_path, csv_file_name_inside_zip, db_
                     with open(temp_csv_file_path, 'wb') as temp_file:
                         temp_file.write(csv_file.read())
 
+                    sample_csv_file_path = 'sample_temp.csv'
+                    rows_to_write = 100
+                    rows_written = 0
+
+                    # Open the input CSV file for reading
+                    with open(temp_csv_file_path, 'r', newline='') as input_file:
+                        csv_reader = csv.reader(input_file)
+
+                        # Open the output CSV file for writing
+                        with open(sample_csv_file_path, 'w', newline='') as output_file:
+                            csv_writer = csv.writer(output_file)
+
+                            # Iterate over each row in the input CSV and write it to the output CSV
+                            for row in csv_reader:
+                                csv_writer.writerow(row)
+                                rows_written += 1
+                                if rows_written >= rows_to_write:
+                                    break
+
                 # Import data from the extracted CSV into SQLite
-                import_csv_to_sqlite(temp_csv_file_path, db_file)
+                import_csv_to_sqlite(sample_csv_file_path, db_file)
 
                 # Delete the temporary CSV file after successful import
                 if os.path.exists(temp_csv_file_path):
                     os.remove(temp_csv_file_path)
                     print(f"Temporary file deleted: {temp_csv_file_path}")
+                if os.path.exists(sample_csv_file_path):
+                    os.remove(sample_csv_file_path)
+                    print(f"Temporary file deleted: {sample_csv_file_path}")
             else:
                 print(f"CSV file '{csv_file_name_inside_zip}' not found in the ZIP archive.")
     except Exception as e:
