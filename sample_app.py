@@ -57,7 +57,7 @@ def extract_csv_from_zip_and_import(zip_file_path, csv_file_name_inside_zip, db_
                         temp_file.write(csv_file.read())
 
                     sample_csv_file_path = 'sample_temp.csv'
-                    rows_to_write = 100
+                    rows_to_write = 150
                     rows_written = 0
 
                     # Open the input CSV file for reading
