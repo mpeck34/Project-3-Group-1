@@ -64,4 +64,4 @@ function createMarkers(response) {
 }
 
 // Perform an API call to the locally hosted Flask API to get the station information. Call createMarkers when it completes.
-d3.json("http://localhost:5000/api/london_station_information").then(createMarkers);
+d3.json("http://localhost:5000/api/data").then(createMarkers);
