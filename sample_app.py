@@ -26,17 +26,26 @@ def import_csv_to_sqlite(csv_file, db_file):
                             Bike_model VARCHAR(255),
                             Total_duration VARCHAR(255),
                             Total_duration_ms INTEGER,
-                            Station_name VARCHAR(255),
-                            Latitude REAL,
-                            Longitude REAL
+                            Start_lat REAL,
+                            Start_lon REAL,
+                            End_lat REAL,
+                            End_lon REAL
                         )''')
+        
+        # Clear existing data
+        cursor.execute("DELETE FROM bike_share_table")
+        conn.commit()  # Commit the deletion
+        
+        # Perform VACUUM to optimize the database
+        cursor.execute("VACUUM")
+        conn.commit()  # Commit the VACUUM operation
 
         # Read data from CSV and insert into the table
         with open(csv_file, 'r', newline='') as file:
             csv_reader = csv.reader(file)
             next(csv_reader)  # Skip header row if exists
             for row in csv_reader:
-                cursor.execute("INSERT INTO bike_share_table VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
+                cursor.execute("INSERT INTO bike_share_table VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
 
         # Commit changes and close connection
         conn.commit()
