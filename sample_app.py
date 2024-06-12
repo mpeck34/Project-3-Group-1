@@ -1,4 +1,5 @@
 from flask import Flask, jsonify
+from flask_cors import CORS
 import sqlite3
 import csv
 import zipfile
@@ -107,6 +108,12 @@ zip_file_path = './static/data/merged_LondonBikeJourneyAug2023.zip'
 csv_file_name_inside_zip = 'merged_LondonBikeJourneyAug2023.csv'
 db_file = 'LondonBikeJourneyAug2023.db'
 extract_csv_from_zip_and_import(zip_file_path, csv_file_name_inside_zip, db_file)
+
+# Initialize Flask-CORS
+CORS(app)
+
+CORS(app, resources={r"/api/*": {"origins": "http://localhost:5000"}})
+
 
 # Define a route to serve JSON data
 @app.route('/')
