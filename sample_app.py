@@ -25,7 +25,10 @@ def import_csv_to_sqlite(csv_file, db_file):
                             Bike_number INTEGER,
                             Bike_model VARCHAR(255),
                             Total_duration VARCHAR(255),
-                            Total_duration_ms INTEGER
+                            Total_duration_ms INTEGER,
+                            Station_name VARCHAR(255),
+                            Latitude REAL,
+                            Longitude REAL
                         )''')
 
         # Read data from CSV and insert into the table
@@ -33,7 +36,7 @@ def import_csv_to_sqlite(csv_file, db_file):
             csv_reader = csv.reader(file)
             next(csv_reader)  # Skip header row if exists
             for row in csv_reader:
-                cursor.execute("INSERT INTO bike_share_table VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
+                cursor.execute("INSERT INTO bike_share_table VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
 
         # Commit changes and close connection
         conn.commit()
@@ -57,7 +60,7 @@ def extract_csv_from_zip_and_import(zip_file_path, csv_file_name_inside_zip, db_
                         temp_file.write(csv_file.read())
 
                     sample_csv_file_path = 'sample_temp.csv'
-                    rows_to_write = 150
+                    rows_to_write = 50000
                     rows_written = 0
 
                     # Open the input CSV file for reading
@@ -91,8 +94,8 @@ def extract_csv_from_zip_and_import(zip_file_path, csv_file_name_inside_zip, db_
         print(f"Error occurred: {e}")
 
 # Import CSV from ZIP into SQLite
-zip_file_path = './static/data/LondonBikeJourneyAug2023.csv.zip'
-csv_file_name_inside_zip = 'LondonBikeJourneyAug2023.csv'
+zip_file_path = './static/data/merged_LondonBikeJourneyAug2023.zip'
+csv_file_name_inside_zip = 'merged_LondonBikeJourneyAug2023.csv'
 db_file = 'LondonBikeJourneyAug2023.db'
 extract_csv_from_zip_and_import(zip_file_path, csv_file_name_inside_zip, db_file)
 
