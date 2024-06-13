@@ -56,7 +56,7 @@ function createMarkers(response) {
     // If station is new, create a marker and add it to bikeMarkers
     if (!stationAlreadyExists) {
       let bikeMarker = L.marker([station.Start_lat, station.Start_lon])
-        .bindPopup(`<h3>${station.Start_station}</h3><hr><p>Unused: ${station.number_of_bikes} (adjust this property)</p>`); // Adjust this to include relevant data
+        .bindPopup(`<h3>${station.Start_station}</h3><hr><p>Unused: </p>`);
 
       bikeMarkers.push(bikeMarker);
     }
