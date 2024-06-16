@@ -4,6 +4,7 @@ import sqlite3
 import csv
 import zipfile
 import os
+import pandas as pd
 
 app = Flask(__name__)
 
@@ -109,17 +110,17 @@ csv_file_name_inside_zip = 'merged_LondonBikeJourneyAug2023.csv'
 db_file = 'LondonBikeJourneyAug2023.db'
 extract_csv_from_zip_and_import(zip_file_path, csv_file_name_inside_zip, db_file)
 
-# Initialize Flask-CORS
+# Initialize Flask-CORS to allow access
 CORS(app)
-
 CORS(app, resources={r"/api/*": {"origins": "http://localhost:5000"}})
-
 
 # Define a route to serve JSON data
 @app.route('/')
 def home():
     return "Hello, Flask is running!"
 
+
+# Main address for leaflet map
 @app.route('/api/data')
 def get_data():
     try:
@@ -144,6 +145,55 @@ def get_data():
 
     # Return JSON response
     return jsonify(data)
+
+# Endpoint to return most common routes data with coordinates
+@app.route('/api/most_common_routes', methods=['GET'])
+def get_most_common_routes():
+    try:
+        # Connect to SQLite database
+        conn = sqlite3.connect(db_file)
+        cursor = conn.cursor()
+
+        # Retrieve data from the table
+        cursor.execute("SELECT * FROM bike_share_table")
+        rows = cursor.fetchall()
+
+        # Get column names
+        column_names = [description[0] for description in cursor.description]
+
+        # Convert data to DataFrame
+        bike_df = pd.DataFrame(rows, columns=column_names)
+
+        # Group by Start_station and End_station to find most common routes
+        route_counts = bike_df.groupby(['Start_station', 'End_station']).size().reset_index(name='count')
+        most_common_routes = route_counts.loc[route_counts.groupby('Start_station')['count'].idxmax()]
+
+        # Merge with coordinates for start and end stations
+        most_common_routes_coords = pd.merge(
+            most_common_routes,
+            bike_df[['Start_station', 'Start_lat', 'Start_lon']].drop_duplicates(subset=['Start_station']),
+            on='Start_station',
+            how='left'
+        )
+        most_common_routes_coords = pd.merge(
+            most_common_routes_coords,
+            bike_df[['End_station', 'End_lat', 'End_lon']].drop_duplicates(subset=['End_station']),
+            on='End_station',
+            how='left',
+            suffixes=('_start', '_end')
+        )
+
+        # Prepare JSON response
+        result = most_common_routes_coords.to_dict(orient='records')
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
+    finally:
+        conn.close()
+
+    return jsonify(result)
+
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='127.0.0.1', port=5000)
