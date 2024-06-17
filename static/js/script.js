@@ -42,43 +42,6 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 
-// Dropdown menu intialisation
-let filterDropdown = document.getElementById("filter-dropdown");
-
-// Listen for menu change
-filterDropdown.addEventListener("change", function(event) {
-  let selectedFilter = event.target.value;
-  updateMarkersByFilter(selectedFilter);
-});
-
-// Update dropdown menu
-function updateMarkersByFilter(selectedFilter) {
-  let filteredMarkers = filterMarkersByModel(bikeMarkers, selectedFilter);
-
-  // Clear existing markers from the map
-  bikeStationsLayer.clearLayers();
-
-  // Add filtered markers to the layer and potentially refit bounds
-  bikeStationsLayer.addLayer(filteredMarkers);
-  if (filteredMarkers.length > 0) {
-    myMap.fitBounds(bikeStationsLayer.getBounds());
-  }
-}
-
-// Function that does the logic to filter for model
-function filterMarkersByModel(bikeMarkers, selectedFilter) {
-  let filteredMarkers = [];
-  if (selectedFilter === "all") {
-    // No filtering, return all markers
-    filteredMarkers = bikeMarkers;
-  } else if (selectedFilter === "CLASSIC" || selectedFilter === "PBSC_EBIKE") {
-    // Filter based on bike model
-    filteredMarkers = bikeMarkers.filter(marker => marker.data.Bike_model === selectedFilter);
-  } else {
-    console.warn(`Invalid filter option: ${selectedFilter}`);
-  }
-  return filteredMarkers;
-}
 
 // Create markers
 function createMarkers(response) {
