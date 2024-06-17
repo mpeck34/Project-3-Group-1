@@ -1,8 +1,10 @@
 from flask import Flask, jsonify
+from flask_cors import CORS
 import sqlite3
 import csv
 import zipfile
 import os
+import pandas as pd
 
 app = Flask(__name__)
 
@@ -25,15 +27,27 @@ def import_csv_to_sqlite(csv_file, db_file):
                             Bike_number INTEGER,
                             Bike_model VARCHAR(255),
                             Total_duration VARCHAR(255),
-                            Total_duration_ms INTEGER
+                            Total_duration_ms INTEGER,
+                            Start_lat REAL,
+                            Start_lon REAL,
+                            End_lat REAL,
+                            End_lon REAL
                         )''')
+        
+        # Clear existing data
+        cursor.execute("DELETE FROM bike_share_table")
+        conn.commit()  # Commit the deletion
+        
+        # Perform VACUUM to optimize the database
+        cursor.execute("VACUUM")
+        conn.commit()  # Commit the VACUUM operation
 
         # Read data from CSV and insert into the table
         with open(csv_file, 'r', newline='') as file:
             csv_reader = csv.reader(file)
             next(csv_reader)  # Skip header row if exists
             for row in csv_reader:
-                cursor.execute("INSERT INTO bike_share_table VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
+                cursor.execute("INSERT INTO bike_share_table VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
 
         # Commit changes and close connection
         conn.commit()
@@ -56,29 +70,57 @@ def extract_csv_from_zip_and_import(zip_file_path, csv_file_name_inside_zip, db_
                     with open(temp_csv_file_path, 'wb') as temp_file:
                         temp_file.write(csv_file.read())
 
+                    sample_csv_file_path = 'sample_temp.csv'
+                    rows_to_write = 50000
+                    rows_written = 0
+
+                    # Open the input CSV file for reading
+                    with open(temp_csv_file_path, 'r', newline='') as input_file:
+                        csv_reader = csv.reader(input_file)
+
+                        # Open the output CSV file for writing
+                        with open(sample_csv_file_path, 'w', newline='') as output_file:
+                            csv_writer = csv.writer(output_file)
+
+                            # Iterate over each row in the input CSV and write it to the output CSV
+                            for row in csv_reader:
+                                csv_writer.writerow(row)
+                                rows_written += 1
+                                if rows_written >= rows_to_write:
+                                    break
+
                 # Import data from the extracted CSV into SQLite
-                import_csv_to_sqlite(temp_csv_file_path, db_file)
+                import_csv_to_sqlite(sample_csv_file_path, db_file)
 
                 # Delete the temporary CSV file after successful import
                 if os.path.exists(temp_csv_file_path):
                     os.remove(temp_csv_file_path)
                     print(f"Temporary file deleted: {temp_csv_file_path}")
+                if os.path.exists(sample_csv_file_path):
+                    os.remove(sample_csv_file_path)
+                    print(f"Temporary file deleted: {sample_csv_file_path}")
             else:
                 print(f"CSV file '{csv_file_name_inside_zip}' not found in the ZIP archive.")
     except Exception as e:
         print(f"Error occurred: {e}")
 
 # Import CSV from ZIP into SQLite
-zip_file_path = './static/data/LondonBikeJourneyAug2023.csv.zip'
-csv_file_name_inside_zip = 'LondonBikeJourneyAug2023.csv'
+zip_file_path = './static/data/merged_LondonBikeJourneyAug2023.zip'
+csv_file_name_inside_zip = 'merged_LondonBikeJourneyAug2023.csv'
 db_file = 'LondonBikeJourneyAug2023.db'
 extract_csv_from_zip_and_import(zip_file_path, csv_file_name_inside_zip, db_file)
+
+# Initialize Flask-CORS to allow access
+CORS(app)
+CORS(app, resources={r"/api/*": {"origins": "http://localhost:5000"}})
 
 # Define a route to serve JSON data
 @app.route('/')
 def home():
     return "Hello, Flask is running!"
 
+
+# Main address for leaflet map
 @app.route('/api/data')
 def get_data():
     try:
@@ -103,6 +145,55 @@ def get_data():
 
     # Return JSON response
     return jsonify(data)
+
+# Endpoint to return most common routes data with coordinates
+@app.route('/api/most_common_routes', methods=['GET'])
+def get_most_common_routes():
+    try:
+        # Connect to SQLite database
+        conn = sqlite3.connect(db_file)
+        cursor = conn.cursor()
+
+        # Retrieve data from the table
+        cursor.execute("SELECT * FROM bike_share_table")
+        rows = cursor.fetchall()
+
+        # Get column names
+        column_names = [description[0] for description in cursor.description]
+
+        # Convert data to DataFrame
+        bike_df = pd.DataFrame(rows, columns=column_names)
+
+        # Group by Start_station and End_station to find most common routes
+        route_counts = bike_df.groupby(['Start_station', 'End_station']).size().reset_index(name='count')
+        most_common_routes = route_counts.loc[route_counts.groupby('Start_station')['count'].idxmax()]
+
+        # Merge with coordinates for start and end stations
+        most_common_routes_coords = pd.merge(
+            most_common_routes,
+            bike_df[['Start_station', 'Start_lat', 'Start_lon']].drop_duplicates(subset=['Start_station']),
+            on='Start_station',
+            how='left'
+        )
+        most_common_routes_coords = pd.merge(
+            most_common_routes_coords,
+            bike_df[['End_station', 'End_lat', 'End_lon']].drop_duplicates(subset=['End_station']),
+            on='End_station',
+            how='left',
+            suffixes=('_start', '_end')
+        )
+
+        # Prepare JSON response
+        result = most_common_routes_coords.to_dict(orient='records')
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
+    finally:
+        conn.close()
+
+    return jsonify(result)
+
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='127.0.0.1', port=5000)
