@@ -1,6 +1,6 @@
 // Global variables
-let londonCoords = [51.5072, -0.1276];
-let mapZoomLevel = 12;
+let londonCoords = [51.5072, -0.1276]; // Starting coordinates
+let mapZoomLevel = 12; // Starting zoom level
 let myMap; // Declare myMap globally to store the map instance
 let bikeMarkers = []; // Array to store all bike markers
 let bikeStationsLayer; // Layer group for bike markers
