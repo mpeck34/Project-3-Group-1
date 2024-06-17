@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Bike Station Destination</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+</head>
+
+<body>
+
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12 pt-5 text-center bg-light">
+          <h1>London Bike Share Analysis</h1>
+        </div>
+        <div class="col-md-12 p-5 bg-light">
+          <p>Project purpose: Our purpose is to create a healthier and environmentally-friendly city that supports bike use as a primary form of transport for residents and tourists</p>
+          <p>Project objective: Provide data that has the objective to inform city built environment strategies and inform how to supply bikes to meet demand.</p>
+          <div>Project analysis:</div>
+            <div>- What additional infrastructure (bike stations, paths) is needed to make the bike project successful;</div>
+            <div>- How to ensure supply of bikes meet demand (what point in time, i.e time of day or day of week, are bikes required the most) - ensure operational smoothness for the city supply of bikes.</div>
+        </div>
+      </div>
+      <br>
+      <h4 class="p-3 bg-light">Most common starting/ending stations:</h4>
+      <div class="row">
+        <div class="col-md-6">
+          <div id="Static1"></div>
+        </div>
+        <div class="col-md-6">
+          <div id="Static2"></div>
+        </div>
+      </div>
+      <br>
+      <br>
+      <h4 class="card-title p-3 bg-light">Bike station drilldown</h4>
+        <br>
+      <div class="row">
+        <div class="col-md-3">
+          <div class="card card-body bg-light">
+            <h6>London Bike Station Destination:</h6>
+            <select id="selDataset" onchange="optionChanged(this.value)"></select>
+          </div>
+          <br>
+          <div class="card card-primary">
+            <div class="card-header">
+              <h6 class="card-title">Station Info</h6>
+            </div>
+            <div id="sample-metadata" class="card-body">
+            </div>
+          </div>
+        </div>
+        <div class="col-md-9">
+          <div id="bar"></div>
+        </div>
+      </div>
+      <br>
+      <br>
+      <div class="row">
+        <div class="col-md-12">
+          <h4 class="p-3 bg-light">Bike station location and corresponding top destination</h4>
+          <br>
+          <embed type="text/html" src="index.html" width="1300" height="600">
+          <div id="leaflet"></div>
+        </div>
+      </div>
+    </div>
+  
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="./static/js/app.js"></script>
+  
+  </body>
+  
+  </html>
+  
