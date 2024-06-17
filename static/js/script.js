@@ -1,7 +1,9 @@
+// Global variables
 let londonCoords = [51.5072, -0.1276];
 let mapZoomLevel = 12;
 let myMap; // Declare myMap globally to store the map instance
-
+let bikeMarkers = []; // Array to store all bike markers
+let bikeStationsLayer; // Layer group for bike markers
 
 // Wait for the DOM to load before executing any code
 document.addEventListener("DOMContentLoaded", function() {
@@ -13,77 +15,122 @@ document.addEventListener("DOMContentLoaded", function() {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(myMap);
 
-  // Perform an API call to the locally hosted Flask API to get the station information. Call createMarkers when it completes.
+  // Fetch station data and create markers
   fetch("http://localhost:5000/api/data")
     .then(response => response.json())
     .then(data => {
       console.log(data);
-      let bikeMarkers = createMarkers(data);
-      
-      // Create a layer group from bike markers and add to the map
-      let bikeStationsLayer = L.layerGroup(bikeMarkers);
 
-      // Add bikeStationsLayer to myMap if myMap is initialized
-      if (myMap) {
-        bikeStationsLayer.addTo(myMap);
+      // Create markers
+      bikeMarkers = createMarkers(data);
+      console.log(bikeMarkers);
 
-        // Fit the map bounds to all bike stations
-        if (bikeMarkers.length > 0) {
-          myMap.fitBounds(bikeStationsLayer.getBounds());
-        } else {
-          console.warn("No bike markers to fit bounds to.");
-        }
-      } else {
-        console.error("Map instance (myMap) is not initialized.");
-      }
+      // Create a layer group from bike markers
+      bikeStationsLayer = L.layerGroup(bikeMarkers);
+      bikeStationsLayer.addTo(myMap);
+
+      // Populate dropdown menu with station names
+      populateDropdown(bikeMarkers);
     })
     .catch(error => {
-      console.error("Error fetching data:", error);
+      console.error("Error fetching data for dropdown:", error);
     });
+
+  // Event listener for Show All Stations button
+  let showAllButton = document.getElementById("show-all-stations");
+  showAllButton.addEventListener("click", function() {
+    // Reset the dropdown menu to default option
+    let dropdown = document.getElementById("bike-stations");
+    dropdown.selectedIndex = 0; // Set the default option to be selected
+
+    // Check if bikeStationsLayer exists and myMap is initialized
+    if (myMap && bikeStationsLayer) {
+      // Clear existing layers on the map
+      myMap.removeLayer(bikeStationsLayer);
+
+      // Add the bikeStationsLayer back to myMap
+      bikeStationsLayer.addTo(myMap);
+    }
+  });
 });
 
+// Function to populate dropdown menu with station names
+function populateDropdown(bikeMarkers) {
+  let dropdown = document.getElementById("bike-stations");
 
-// Create markers
+  // Clear existing options
+  dropdown.innerHTML = "";
+
+  // Add default option
+  let defaultOption = document.createElement("option");
+  defaultOption.text = "Select a station";
+  dropdown.add(defaultOption);
+
+  // Create a temporary list of station names
+  let stationNames = [];
+  bikeMarkers.forEach(marker => {
+    stationNames.push(marker.options.title);
+  });
+
+  // Sort station names alphabetically
+  stationNames.sort();
+
+  // Add sorted station names as options
+  stationNames.forEach(stationName => {
+    let option = document.createElement("option");
+    option.text = stationName;
+    dropdown.add(option);
+  });
+
+  // Event listener for dropdown change
+  dropdown.addEventListener("change", function() {
+    let selectedStation = dropdown.value;
+
+    // Loop through all bikeMarkers
+    bikeMarkers.forEach(marker => {
+      if (marker.options.title === selectedStation) {
+        // Show the selected marker
+        marker.addTo(myMap).openPopup();
+      } else {
+        // Hide markers that are not selected
+        myMap.removeLayer(marker);
+      }
+    });
+  });
+}
+
+
+// Function to create markers
 function createMarkers(response) {
-  // Pull the data
   let stations = response;
-
-  // Initialise an array to hold the unique bike markers.
   let bikeMarkers = [];
+  let uniqueCoords = new Set(); // Set to store unique coordinates
 
-  // Use a Set to keep track of unique station coordinates
-  let uniqueCoords = new Set();
-
-  // Loop through the stations array.
-  for (let i = 0; i < stations.length; i++) {
-    let station = stations[i];
+  // Loop through stations array and create markers
+  stations.forEach(station => {
     let coordKey = `${station.Start_lat},${station.Start_lon}`;
 
     // Check if the station's coordinates are already in the Set
     if (!uniqueCoords.has(coordKey)) {
-      // If station is new, create a marker and add it to bikeMarkers
-      let bikeMarker = L.marker([station.Start_lat, station.Start_lon])
+      let bikeMarker = L.marker([station.Start_lat, station.Start_lon], { title: station.Start_station })
         .bindPopup(`<h3>${station.Start_station}</h3><hr><p>Most common destination: Loading...</p>`);
 
-      // Attach event listener for click to draw lines
+      // Attach click event to marker
       bikeMarker.on('click', function(e) {
-        // Call function to draw lines to the most traveled-to station
         drawLines(station.Start_station);
       });
 
       bikeMarkers.push(bikeMarker);
-      uniqueCoords.add(coordKey);
+      uniqueCoords.add(coordKey); // Add coordinates to Set to track uniqueness
     }
-  }
+  });
 
-  // Return bikeMarkers array so they can be added to the map outside of this function
   return bikeMarkers;
 }
 
-
-// Function to draw lines for the most common destination on each marker
-function drawLines(startStation, endStation) {
-  // Get data from API
+// Function to draw lines for most common destination
+function drawLines(startStation) {
+  // Fetch most common routes data from API
   fetch(`http://localhost:5000/api/most_common_routes`)
     .then(response => response.json())
     .then(data => {
@@ -91,7 +138,7 @@ function drawLines(startStation, endStation) {
       let route = data.find(route => route.Start_station === startStation);
 
       if (route) {
-        // Update the popup content with the most common destination
+        // Update popup content with most common destination
         let popupContent = `<h3>${startStation}</h3><hr><p>Most common destination: ${route.End_station}</p>`;
         myMap.openPopup(popupContent, [route.Start_lat, route.Start_lon]);
 
@@ -100,7 +147,7 @@ function drawLines(startStation, endStation) {
         let endCoords = [route.End_lat, route.End_lon];
         let line = L.polyline([startCoords, endCoords], { color: 'red' }).addTo(myMap);
       } else {
-        console.error(`Most visited route not found for ${startStation} to ${endStation}`);
+        console.error(`Most visited route not found for ${startStation}`);
       }
     })
     .catch(error => {
