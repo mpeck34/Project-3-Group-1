@@ -35,4 +35,5 @@ In this project we used London Bike Share Data we sourced from Kaggle that had d
 ## Ethical Considerations
 
 An ethical consideration made during the process of creating this project is that a user with the required skills and nefarious intentions could use the data to track people's movement
-and enagage in potentailly criminal activity, the data used is anonimised and the data is historical which alleviates those concerns. 
+and enagage in potentailly criminal activity, the data used is anonimised and the data is historical which alleviates those concerns. even without personal identifying information patterns and trends could be gleaned from the data to be used by competitors to undermine TFL's Bike Share Program
+
